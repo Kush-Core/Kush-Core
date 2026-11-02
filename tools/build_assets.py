@@ -55,13 +55,19 @@ ARMORY = [
 ]
 SEALS = {"linkedin": ("in", 17, "LinkedIn"), "email": ("@", 21, "Email")}
 
-# The glow and flicker pattern from the design brief, verbatim.
-GLOW_FILTER = (
-    '<filter id="glow" x="-20%" y="-50%" width="140%" height="200%">'
-    '<feGaussianBlur stdDeviation="4" result="b"/>'
-    '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
-    "</filter>"
-)
+# The glow and flicker pattern from the design brief. The blur is the brief's 4
+# on dark; on white it leaves a brown halo, so the light theme uses 2 (approved
+# at design review).
+NAME_GLOW_STD = {"dark": 4, "light": 2}
+
+
+def glow_filter(theme: str) -> str:
+    return (
+        '<filter id="glow" x="-20%" y="-50%" width="140%" height="200%">'
+        f'<feGaussianBlur stdDeviation="{NAME_GLOW_STD[theme]}" result="b"/>'
+        '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+        "</filter>"
+    )
 SOFT_GLOW_FILTER = (
     '<filter id="soft-glow" x="-10%" y="-10%" width="120%" height="120%">'
     '<feGaussianBlur stdDeviation="1.5" result="b"/>'
@@ -272,7 +278,7 @@ def frontispiece(theme: str) -> str:
         f'<path fill="{p["ink"]}" d="{words}"/>',
         f'<path fill="{p["gold"]}" d="{dots}"/>',
     ])
-    return document(w, h, f"{NAME_TEXT} — {SUBTITLE_TEXT}", body, GLOW_FILTER + SOFT_GLOW_FILTER, FLICKER_CSS)
+    return document(w, h, f"{NAME_TEXT} — {SUBTITLE_TEXT}", body, glow_filter(theme) + SOFT_GLOW_FILTER, FLICKER_CSS)
 
 
 def _shield(cx: float, top: float, half_w: float, side_bottom: float, tip: float) -> str:
