@@ -193,6 +193,13 @@ def leaf(x: float, y: float, angle: float, length: float = 12, width: float = 7)
     )
 
 
+def regular_polygon(cx: float, cy: float, r: float, sides: int, rotation_deg: float = -90) -> str:
+    """Closed path for a regular polygon (circumradius r); the default puts a vertex at the top."""
+    pts = [(cx + r * math.cos(math.radians(rotation_deg + 360 * k / sides)),
+            cy + r * math.sin(math.radians(rotation_deg + 360 * k / sides))) for k in range(sides)]
+    return "M" + "L".join(f"{num(x)} {num(y)}" for x, y in pts) + "Z"
+
+
 def lozenge(cx: float, cy: float, r: float) -> str:
     return f"M{num(cx)} {num(cy - r)}L{num(cx + r)} {num(cy)}L{num(cx)} {num(cy + r)}L{num(cx - r)} {num(cy)}Z"
 
@@ -324,14 +331,24 @@ def armory(theme: str) -> str:
     parts = [panel(p, w, h)]
     for i, (title, items) in enumerate(ARMORY):
         cx = col_w * i + col_w / 2
+        shield = _shield(cx, top, half_w, side_bottom, tip)
+        delay = i * ARMORY_STAGGER_S  # columns ripple left to right
         parts.append(
-            f'<path{p["outline_filter"]} d="{_shield(cx, top, half_w, side_bottom, tip)}" fill="none" '
+            # Slowly breathing glow behind the outline (resting state: visible, mid strength).
+            f'<path class="glow" filter="url(#halo)" style="animation-delay:{delay:g}s" d="{shield}" fill="none" '
+            f'stroke="{p["gold"]}" stroke-width="3" stroke-linejoin="round"/>'
+            f'<path{p["outline_filter"]} d="{shield}" fill="none" '
             f'stroke="{p["gold"]}" stroke-width="1.5" stroke-linejoin="round"/>'
             f'<path d="{_shield(cx, top + 6, half_w - 6, side_bottom, tip - 9)}" fill="none" '
             f'stroke="{p["gold"]}" stroke-opacity="0.35" stroke-width="0.75"/>'
-            f'<g fill="{p["panel"]}" stroke="{p["cyan"]}" stroke-width="1.2">'
-            f'<circle cx="{num(cx - half_w)}" cy="{top}" r="2.6"/><circle cx="{num(cx + half_w)}" cy="{top}" r="2.6"/></g>'
         )
+        # Rivets as red (rubric) status LEDs that fade slowly in and out (text never blinks).
+        for k, rx in enumerate((cx - half_w, cx + half_w)):
+            parts.append(
+                f'<g class="led" style="animation-delay:{delay + k * ARMORY_STAGGER_S / 2:g}s" fill="{p["rubric"]}">'
+                f'<path d="{regular_polygon(rx, top, ARMORY_LED_HALO_R, ARMORY_LED_SIDES)}" fill-opacity="0.25"/>'
+                f'<path d="{regular_polygon(rx, top, ARMORY_LED_CORE_R, ARMORY_LED_SIDES)}"/></g>'
+            )
         parts.append(f'<path fill="{p["rubric"]}" d="{MONO.path(title, cx, top + 34, title_size, "middle")}"/>')
         rule_y = top + 46
         parts.append(
@@ -349,7 +366,28 @@ def armory(theme: str) -> str:
         numeral = ("I", "II", "III", "IV", "V")[i]
         parts.append(f'<path fill="{p["muted"]}" d="{MONO.path(numeral, cx, 214, 14, "middle")}"/>')
     title ="Tech stack — " + "; ".join(f"{t}: {', '.join(items)}" for t, items in ARMORY)
-    return document(w, h, title, "\n".join(parts), SOFT_GLOW_FILTER)
+    return document(w, h, title, "\n".join(parts), SOFT_GLOW_FILTER + HALO_FILTER, armory_css(theme))
+
+
+# Armory motion: slow, soft blinking. Rivet LEDs fade 1 -> 0.2 -> 1 over 4 s and
+# the outline glow breathes over 6 s; columns are staggered so the effect
+# ripples left to right. Resting states are fully visible; text is static.
+ARMORY_STAGGER_S = 0.6
+ARMORY_LED_CORE_R = 4
+ARMORY_LED_HALO_R = 10
+ARMORY_LED_SIDES = 10  # decagon LEDs
+ARMORY_LED_PERIOD_S = 4
+ARMORY_GLOW_PERIOD_S = 6
+
+
+def armory_css(theme: str) -> str:
+    lo, hi = (0.15, 0.6) if theme == "dark" else (0.05, 0.25)
+    return (
+        f".led {{ opacity: 1; animation: led {ARMORY_LED_PERIOD_S}s ease-in-out infinite; }} "
+        "@keyframes led { 0%, 100% { opacity: 1 } 50% { opacity: .2 } } "
+        f".glow {{ opacity: {(lo + hi) / 2:.2f}; animation: shimmer {ARMORY_GLOW_PERIOD_S}s ease-in-out infinite; }} "
+        f"@keyframes shimmer {{ 0%, 100% {{ opacity: {lo} }} 50% {{ opacity: {hi} }} }}"
+    )
 
 
 def seal(theme: str, kind: str) -> str:

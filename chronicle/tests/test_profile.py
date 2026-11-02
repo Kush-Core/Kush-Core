@@ -56,3 +56,17 @@ def test_existing_flicker_and_cursor_rules_unchanged():
     css = _css("frontispiece-dark.svg")
     assert ".name { animation: flicker 6s infinite; }" in css
     assert "92%,94%{opacity:.55}" in css
+
+
+def test_armory_blinks_slowly_and_text_stays_still():
+    for name in ("armory-dark.svg", "armory-light.svg"):
+        svg = (ROOT / "assets" / name).read_text(encoding="utf-8")
+        css = _css(name)
+        assert "@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }" in css
+        assert re.search(r"\.led \{ opacity: 1;", css)          # LEDs fully visible at rest
+        assert re.search(r"\.glow \{ opacity: 0\.\d+;", css)    # glow visible at rest
+        periods = [float(s) for s in re.findall(r"animation: \w+ ([0-9.]+)s [^;]*infinite", css)]
+        assert periods and min(periods) >= 3, periods           # slow: well under 3 flashes per second
+        assert svg.count('class="led"') == 10 and svg.count('class="glow"') == 5
+        # Only the LED groups and glow outlines are animated; text paths carry no class.
+        assert set(re.findall(r'class="([^"]+)"', svg)) == {"led", "glow"}
