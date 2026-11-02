@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="{{ width }}" height="{{ height }}" viewBox="0 0 {{ width }} {{ height }}" role="img" aria-labelledby="t">
+<title id="t">{{ title }}</title>
+<defs>
+<style>
+@font-face { font-family: "JBM Chronicle"; src: url(data:font/woff2;base64,{{ font_b64 }}) format("woff2"); }
+text { font-family: "JBM Chronicle", ui-monospace, monospace; font-size: 15px; }
+.cursor { animation: blink {{ blink_s }}s infinite; }
+@keyframes blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+{{ reduced_motion }}
+</style>
+</defs>
+<rect x="0.5" y="0.5" width="{{ width - 1 }}" height="{{ height - 1 }}" rx="14" fill="{{ c.panel }}" stroke="{{ c.border }}" stroke-opacity="{{ c.border_opacity }}"/>
+<path d="M0.5 36H{{ width - 0.5 }}" stroke="{{ c.border }}" stroke-opacity="{{ c.border_opacity }}"/>
+<circle cx="24" cy="18" r="6" fill="{{ c.rubric }}"/><circle cx="44" cy="18" r="6" fill="{{ c.gold }}"/><circle cx="64" cy="18" r="6" fill="{{ c.cyan }}"/>
+<text x="{{ width / 2 }}" y="23" text-anchor="middle" fill="{{ c.muted }}">quests.log</text>
+<text y="66"><tspan x="32" fill="{{ c.cyan }}">$</tspan><tspan x="50" fill="{{ c.ink }}">grep sealed quests.log</tspan></text>
+{%- for r in rows %}
+<text y="{{ 91 + loop.index0 * 25 }}"><tspan x="32" fill="{{ c.cyan }}">▸</tspan><tspan x="56" fill="{{ c.muted }}">{{ r.date }}</tspan><tspan x="236" fill="{{ c.gold }}">{{ r.repo }}</tspan><tspan x="470" fill="{{ c.rubric }}">{{ r.label }}</tspan><tspan x="606" fill="{{ c.ink }}">{{ r.title }}</tspan></text>
+{%- endfor %}
+<text y="{{ summary_y }}"><tspan x="56" fill="{{ c.muted }}">{{ summary }}</tspan></text>
+<text y="{{ prompt_y }}"><tspan x="32" fill="{{ c.cyan }}">$</tspan></text>
+<rect class="cursor" x="50" y="{{ prompt_y - 13 }}" width="9" height="17" fill="{{ c.cyan }}"/>
+</svg>
