@@ -189,3 +189,45 @@ def test_workflow_snake_colours_match_tokens():
         assert len(spec["dots"]) == 5
         expected = f"dist/tapestry-{theme}.svg?color_snake={spec['snake']}&color_dots={','.join(spec['dots'])}"
         assert expected in workflow, f"workflow colours for {theme} differ from tokens.json"
+
+
+# ------------------------------------------------------------------ trimmed PR payloads (observed 2026-11-02)
+def trimmed_pr(action, number, created, url=None):
+    return ev("PullRequestEvent", created, action=action, number=number, pull_request={
+        "base": {}, "head": {}, "id": 1000 + number, "number": number,
+        "url": url or f"https://api.github.com/repos/Kush-Core/demo/pulls/{number}",
+    })
+
+
+def test_trimmed_pr_payloads_are_recognised_and_titled():
+    events = [trimmed_pr("merged", 7, "2026-11-02T19:57:15Z"), trimmed_pr("opened", 7, "2026-11-02T19:53:30Z")]
+    calls = []
+
+    def get(url, token):
+        calls.append(url)
+        return {"title": "Real title"}
+
+    merged, opened = fetch.select(events, get=get)
+    assert (merged.kind, opened.kind) == ("pr_merged", "pr_opened")
+    assert merged.message == opened.message == "Real title"
+    assert (render.label(merged), render.label(opened)) == ("sealed", "petitioned")
+    assert calls == ["https://api.github.com/repos/Kush-Core/demo/pulls/7"] * 2
+
+
+def test_pr_title_lookup_failure_falls_back_to_number():
+    def get(url, token):
+        raise fetch.FetchError(404, "gone")
+
+    (entry,) = fetch.select([trimmed_pr("opened", 9, "2026-11-02T10:00:00Z")], get=get)
+    assert entry.message == "#9"
+
+
+def test_pr_url_off_api_host_is_not_followed():
+    calls = []
+
+    def get(url, token):
+        calls.append(url)
+        return {"title": "t"}
+
+    fetch.select([trimmed_pr("opened", 5, "2026-11-02T10:00:00Z", url="https://evil.example/steal")], get=get)
+    assert calls == ["https://api.github.com/repos/Kush-Core/demo/pulls/5"]

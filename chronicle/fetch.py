@@ -14,7 +14,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 API = "https://api.github.com"
@@ -89,12 +89,15 @@ def _classify(event: dict) -> Entry | None:
         return Entry(when, repo, "push", count, message)
 
     if kind_name == "PullRequestEvent":
+        # Observed 2026-11-02: payloads are trimmed (pull_request carries only
+        # base/head/id/number/url, no title) and a merge arrives as action
+        # "merged". The older form, "closed" with merged=true, is also accepted.
         pr = payload.get("pull_request") or {}
-        title = pr.get("title") or (f"#{payload['number']}" if payload.get("number") else "")
+        title = pr.get("title") or ""
         action = payload.get("action")
         if action == "opened":
             return Entry(when, repo, "pr_opened", None, title)
-        if action == "closed" and (pr.get("merged") is True or pr.get("merged_at")):
+        if action == "merged" or (action == "closed" and (pr.get("merged") is True or pr.get("merged_at"))):
             return Entry(when, repo, "pr_merged", None, title)
         return None
 
@@ -129,9 +132,40 @@ def _complete_push(entry: Entry, event: dict, token: str | None, get: Getter) ->
     return Entry(entry.when, entry.repo, entry.kind, count if isinstance(count, int) else None, message)
 
 
+def _complete_pr(entry: Entry, event: dict, token: str | None, get: Getter) -> Entry:
+    """Trimmed PR payloads carry no title: read it from the pull request itself.
+    Only api.github.com URLs are followed, because the request carries the token.
+    If the lookup fails, the PR number ("#12") is shown instead."""
+    if entry.message:
+        return entry
+    payload = event.get("payload") or {}
+    pr = payload.get("pull_request") or {}
+    number = pr.get("number") or payload.get("number")
+    fallback = f"#{number}" if number else ""
+    url = pr.get("url")
+    if not (isinstance(url, str) and url.startswith(API + "/")):
+        url = f"{API}/repos/{entry.repo}/pulls/{number}" if number else None
+    if not url:
+        return replace(entry, message=fallback)
+    try:
+        data = get(url, token)
+    except FetchError:
+        data = None
+    title = data.get("title") if isinstance(data, dict) else None
+    return replace(entry, message=title if isinstance(title, str) and title else fallback)
+
+
+def _complete(entry: Entry, event: dict, token: str | None, get: Getter) -> Entry:
+    if entry.kind == "push":
+        return _complete_push(entry, event, token, get)
+    if entry.kind in ("pr_opened", "pr_merged"):
+        return _complete_pr(entry, event, token, get)
+    return entry
+
+
 def select(events: list[dict], token: str | None = None, get: Getter | None = None, limit: int = LIMIT) -> list[Entry]:
-    """Newest ``limit`` kept events, newest first."""
+    """Newest ``limit`` kept events, newest first, with missing details filled in."""
     get = get or _get
     kept = [(entry, event) for event in events if (entry := _classify(event))]
     kept.sort(key=lambda pair: pair[0].when, reverse=True)
-    return [_complete_push(e, ev, token, get) if e.kind == "push" else e for e, ev in kept[:limit]]
+    return [_complete(e, ev, token, get) for e, ev in kept[:limit]]
