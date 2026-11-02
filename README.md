@@ -26,6 +26,9 @@ Python · TypeScript · C++ · SQL · FastAPI · Pydantic · Uvicorn · PyJWT ·
 | [Renewal Risk](https://github.com/Kush-Core/Renewal-risk) · *The Ledger of Fortunes* | Scores churn risk per renewal decision from a 23M-row subscription payment log: calibrated models, six-cycle survival curves and plain-English reason codes | Python · DuckDB · scikit-learn · lifelines |
 | [Throttling1](https://github.com/Kush-Core/Throttling1) · *The Clockwork Trial* | Microbenchmark measuring how compiler flags, OS scheduler contention and thread count change the runtime of a 100M-float sum on Apple M1 | C++ · clang · shell |
 
+<!-- quests:start -->
+<!-- quests:end -->
+
 ### ✠ The Chronicle · Recent Activity
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Kush-Core/Kush-Core/main/dist/chronicle-dark.svg">

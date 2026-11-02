@@ -1,0 +1,4 @@
+{
+  "$comment": "Hide entries from the Quests Abroad section: \"owner/repo\" hides a whole repository, \"owner/repo#123\" one pull request.",
+  "exclude": []
+}
