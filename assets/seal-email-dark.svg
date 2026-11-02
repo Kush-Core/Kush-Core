@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-labelledby="t">
+<title id="t">Email</title>
+<defs><linearGradient id="holo" gradientUnits="userSpaceOnUse" x1="6" y1="6" x2="42" y2="42"><stop offset="0" stop-color="#22D3EE"/><stop offset="0.5" stop-color="#FF4D8D"/><stop offset="1" stop-color="#FFC94A"/></linearGradient></defs>
+<style>@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }</style>
+<rect x="0.5" y="0.5" width="47" height="47" rx="10" fill="#0D1117" stroke="#FFC94A" stroke-opacity="0.4"/>
+<path d="M24 5L40.5 14.5L40.5 33.5L24 43L7.5 33.5L7.5 14.5Z" fill="url(#holo)" fill-opacity="0.16" stroke="url(#holo)" stroke-width="2" stroke-linejoin="round"/>
+<path d="M24 9L37 16.5L37 31.5L24 39L11 31.5L11 16.5Z" fill="none" stroke="#FFC94A" stroke-opacity="0.5" stroke-width="0.75"/>
+<path fill="#E6EDF3" d="M24.5 33.7Q22.7 33.7 21.4 32.9Q20 32.2 19.3 30.8Q18.6 29.4 18.6 27.6V20.4Q18.6 18.5 19.3 17.2Q20 15.8 21.2 15.1Q22.5 14.3 24.3 14.3Q25.9 14.3 27 15Q28.2 15.6 28.8 16.7Q29.4 17.9 29.4 19.5V28.5H27.9V27.4H27.3L27.7 26.9Q27.7 27.7 27.1 28.2Q26.5 28.7 25.5 28.7Q24.1 28.7 23.4 27.9Q22.7 27.1 22.7 25.5V23Q22.7 21.4 23.4 20.5Q24.1 19.7 25.5 19.7Q26.5 19.7 27.1 20.2Q27.7 20.7 27.7 21.5L27.4 21.1H27.9L27.7 19.6V19.5Q27.7 18.3 27.3 17.5Q26.9 16.7 26.2 16.2Q25.4 15.8 24.3 15.8Q22.4 15.8 21.3 17Q20.3 18.2 20.3 20.4V27.6Q20.3 29.7 21.4 30.9Q22.5 32.1 24.5 32.1H25.9V33.7ZM26 27.4Q26.9 27.4 27.3 26.9Q27.7 26.4 27.7 25.3V22.9Q27.7 21.9 27.3 21.5Q26.9 21 26 21Q25.2 21 24.8 21.5Q24.4 22 24.4 23V25.5Q24.4 26.5 24.8 26.9Q25.2 27.4 26 27.4Z"/>
+</svg>

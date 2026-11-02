@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-labelledby="t">
+<title id="t">LinkedIn</title>
+<defs><linearGradient id="holo" gradientUnits="userSpaceOnUse" x1="6" y1="6" x2="42" y2="42"><stop offset="0" stop-color="#0B6E8A"/><stop offset="0.5" stop-color="#B4124A"/><stop offset="1" stop-color="#8A5A00"/></linearGradient></defs>
+<style>@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }</style>
+<rect x="0.5" y="0.5" width="47" height="47" rx="10" fill="#FFFFFF" stroke="#D0D7DE" stroke-opacity="1.0"/>
+<path d="M24 5L40.5 14.5L40.5 33.5L24 43L7.5 33.5L7.5 14.5Z" fill="url(#holo)" fill-opacity="0.16" stroke="url(#holo)" stroke-width="2" stroke-linejoin="round"/>
+<path d="M24 9L37 16.5L37 31.5L24 39L11 31.5L11 16.5Z" fill="none" stroke="#8A5A00" stroke-opacity="0.5" stroke-width="0.75"/>
+<path fill="#1F2328" d="M15.3 30.6V29.2H18.6V22.6H15.7V21.3H20.1V29.2H23.3V30.6ZM19.2 19.6Q18.6 19.6 18.3 19.3Q18 19 18 18.5Q18 18 18.3 17.7Q18.6 17.4 19.2 17.4Q19.8 17.4 20.1 17.7Q20.4 18 20.4 18.5Q20.4 19 20.1 19.3Q19.8 19.6 19.2 19.6ZM25.6 30.6V21.3H27.1V23H27.5L27.1 23.4Q27.1 22.3 27.8 21.7Q28.5 21.1 29.6 21.1Q31 21.1 31.9 22Q32.7 22.8 32.7 24.3V30.6H31.2V24.5Q31.2 23.5 30.6 22.9Q30.1 22.4 29.2 22.4Q28.2 22.4 27.7 23Q27.1 23.6 27.1 24.7V30.6Z"/>
+</svg>

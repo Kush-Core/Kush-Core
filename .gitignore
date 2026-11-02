@@ -1,0 +1,5 @@
+.venv/
+preview/
+social/
+__pycache__/
+.pytest_cache/
