@@ -36,6 +36,9 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import content  # noqa: E402  (tools/content.py: shared profile text)
+
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
 TOKENS = json.loads((ROOT / "tokens.json").read_text(encoding="utf-8"))
@@ -194,7 +197,7 @@ def lozenge(cx: float, cy: float, r: float) -> str:
     return f"M{num(cx)} {num(cy - r)}L{num(cx + r)} {num(cy)}L{num(cx)} {num(cy + r)}L{num(cx - r)} {num(cy)}Z"
 
 
-def corner(p, curl: bool = True) -> str:
+def corner(p, curl: bool = True, pulse_delay: float | None = None) -> str:
     """Corner motif in top-left orientation: a gold vine bracket (manuscript) that
     continues along each edge as a cyan circuit trace ending in a via pad."""
     gold, cyan, bg = p["gold"], p["cyan"], p["panel"]
@@ -213,15 +216,22 @@ def corner(p, curl: bool = True) -> str:
     out.append(f'<g fill="{bg}" stroke="{cyan}" stroke-width="1.5">'
                '<circle cx="254" cy="30" r="3.5"/><circle cx="30" cy="138" r="3.5"/></g>')
     out.append(f'<circle cx="140" cy="22" r="1.8" fill="{cyan}"/>')
+    if pulse_delay is not None:
+        # A bright dash that runs from the left edge through the vine and along
+        # the circuit trace (animated cards only; see MOTION notes below).
+        out.append(f'<path class="pulse" pathLength="1" style="animation-delay:{pulse_delay:g}s" '
+                   f'd="M22 112V46Q22 22 46 22H170L178 30H250.5" fill="none" stroke="{cyan}" '
+                   'stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>')
     return "".join(out)
 
 
-def mirrored_corners(p, w: int, h: int, top_left_curl: bool) -> str:
+def mirrored_corners(p, w: int, h: int, top_left_curl: bool, pulse_delays: tuple | None = None) -> str:
+    d = pulse_delays or (None, None, None, None)
     return "\n".join([
-        f"<g>{corner(p, curl=top_left_curl)}</g>",
-        f'<g transform="matrix(-1 0 0 1 {w} 0)">{corner(p)}</g>',
-        f'<g transform="matrix(1 0 0 -1 0 {h})">{corner(p)}</g>',
-        f'<g transform="matrix(-1 0 0 -1 {w} {h})">{corner(p)}</g>',
+        f"<g>{corner(p, curl=top_left_curl, pulse_delay=d[0])}</g>",
+        f'<g transform="matrix(-1 0 0 1 {w} 0)">{corner(p, pulse_delay=d[1])}</g>',
+        f'<g transform="matrix(1 0 0 -1 0 {h})">{corner(p, pulse_delay=d[2])}</g>',
+        f'<g transform="matrix(-1 0 0 -1 {w} {h})">{corner(p, pulse_delay=d[3])}</g>',
     ])
 
 
@@ -401,6 +411,159 @@ def write_placeholders() -> list[Path]:
     return written
 
 
+# ---------------------------------------------------------------- animated cards
+# MOTION contract for the Proclamation and Deeds cards:
+#  * every animated element's resting style is its finished, visible state;
+#    animations only run *from* a hidden state (fill-mode both). When
+#    prefers-reduced-motion switches animations off, everything is shown.
+#  * entrance effects finish within ~4.5 s; the loops are a slow glow
+#    "breathing" (7 s) and a travelling pulse (8 s). Nothing flashes.
+def motion_css(theme: str) -> str:
+    lo, hi = (0.25, 0.8) if theme == "dark" else (0.1, 0.35)
+    return (
+        ".draw { stroke-dasharray: 1; stroke-dashoffset: 0; animation: draw 1.4s cubic-bezier(.6,0,.2,1) both; } "
+        "@keyframes draw { from { stroke-dashoffset: 1 } to { stroke-dashoffset: 0 } } "
+        ".inkdraw { stroke-dasharray: 1; stroke-dashoffset: 0; fill-opacity: 1; "
+        "animation: draw 1.6s cubic-bezier(.6,0,.2,1) both, ink 2.4s ease-out both; } "
+        "@keyframes ink { 0%, 55% { fill-opacity: 0 } 100% { fill-opacity: 1 } } "
+        ".rise { opacity: 1; animation: rise .8s ease-out both; } "
+        "@keyframes rise { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } } "
+        ".type { transform-box: fill-box; transform-origin: right center; transform: scaleX(0); "
+        "animation-name: type; animation-fill-mode: both; } "
+        "@keyframes type { from { transform: scaleX(1) } to { transform: scaleX(0) } } "
+        f".halo {{ opacity: {(lo + hi) / 2:.2f}; animation: breathe 7s ease-in-out infinite; }} "
+        f"@keyframes breathe {{ 0%, 100% {{ opacity: {lo} }} 50% {{ opacity: {hi} }} }} "
+        ".pulse { opacity: 0; stroke-dasharray: .06 1.06; animation: pulse 8s linear infinite; } "
+        "@keyframes pulse { 0% { stroke-dashoffset: .06; opacity: 1 } 22% { stroke-dashoffset: -1; opacity: 1 } "
+        "23%, 100% { stroke-dashoffset: -1; opacity: 0 } }"
+    )
+
+
+HALO_FILTER = '<filter id="halo" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>'
+TYPE_CHARS_PER_S = 80
+
+
+def _rounded_rect(x: float, y: float, w: float, h: float, r: float) -> str:
+    return (f"M{num(x + r)} {num(y)}H{num(x + w - r)}A{r} {r} 0 0 1 {num(x + w)} {num(y + r)}"
+            f"V{num(y + h - r)}A{r} {r} 0 0 1 {num(x + w - r)} {num(y + h)}H{num(x + r)}"
+            f"A{r} {r} 0 0 1 {num(x)} {num(y + h - r)}V{num(y + r)}A{r} {r} 0 0 1 {num(x + r)} {num(y)}Z")
+
+
+def _animated_panel(p, w: int, h: int, delay: float) -> str:
+    """Solid panel whose 1 px border draws itself in."""
+    return (f'<rect width="{w}" height="{h}" rx="14" fill="{p["panel"]}"/>'
+            f'<path class="draw" pathLength="1" style="animation-delay:{delay:g}s" d="{_rounded_rect(0.5, 0.5, w - 1, h - 1, 14)}" '
+            f'fill="none" stroke="{p["panel-border"]}" stroke-opacity="{p["border_opacity"]}"/>')
+
+
+def _typed(p, text: str, x: float, baseline: float, size: float, delay: float, colour: str) -> tuple[str, float]:
+    """Text plus a panel-coloured cover that steps away one character at a time.
+    Returns (svg, time at which typing ends)."""
+    duration = max(0.3, len(text) / TYPE_CHARS_PER_S)
+    width = MONO.width(text, size)
+    cover = (f'<rect class="type" x="{num(x - 1)}" y="{num(baseline - size)}" width="{num(width + 2)}" '
+             f'height="{num(size * 1.4)}" fill="{p["panel"]}" '
+             f'style="animation-delay:{delay:g}s;animation-duration:{duration:.2f}s;'
+             f'animation-timing-function:steps({len(text)},end)"/>')
+    return f'<path fill="{colour}" d="{MONO.path(text, x, baseline, size)}"/>{cover}', delay + duration
+
+
+def proclamation(theme: str) -> str:
+    p = palette(theme)
+    w, h = 1200, 300
+    sig_x, sig_y, sig_size = 56, 98, 104
+    pil_x, text_x, size = 200, 226, 16
+    gold, rubric, cyan = p["gold"], p["rubric"], p["cyan"]
+    body = [_animated_panel(p, w, h, 0),
+            mirrored_corners(p, w, h, top_left_curl=True, pulse_delays=(4.6, 5.6, 6.6, 7.6))]
+    # Illuminated K: double-ruled square, then the letter drawn in ink and filled.
+    k_size = sig_size * 0.86
+    kl, kt, kr, kb = BLACKLETTER.bounds("K", 0, 0, k_size)
+    kx, ky = sig_x + sig_size / 2 - (kl + kr) / 2, sig_y + sig_size / 2 - (kt + kb) / 2
+    k_path = BLACKLETTER.path("K", kx, ky, k_size)
+    tint = 0.12 if theme == "dark" else 0.07
+    body.append(
+        f'<g class="rise" style="animation-delay:.2s">'
+        f'<rect x="{sig_x}" y="{sig_y}" width="{sig_size}" height="{sig_size}" rx="6" fill="{rubric}" fill-opacity="{tint}" stroke="{gold}" stroke-width="1.5"/>'
+        f'<rect x="{sig_x + 5}" y="{sig_y + 5}" width="{sig_size - 10}" height="{sig_size - 10}" rx="3" fill="none" stroke="{cyan}" stroke-opacity="0.6" stroke-width="0.75"/></g>'
+        f'<g class="rise" style="animation-delay:.4s"><path class="halo" filter="url(#halo)" fill="{gold}" d="{k_path}"/></g>'
+        f'<path class="inkdraw" pathLength="1" style="animation-delay:.4s" fill="{gold}" stroke="{gold}" stroke-width="1.2" d="{k_path}"/>'
+    )
+    baselines = iter([100, 140, 180, 208])
+    t = 0.9
+    for paragraph in content.PROCLAMATION:
+        for j, line in enumerate(paragraph):
+            y = next(baselines)
+            assert text_x + MONO.width(line, size) < w - 48, f"proclamation line too wide: {line!r}"
+            if j == 0:
+                body.append(f'<path class="rise" style="animation-delay:{t:.2f}s" fill="{rubric}" d="{MONO.path("¶", pil_x, y, size)}"/>')
+            svg, t = _typed(p, line, text_x, y, size, t, p["ink"])
+            body.append(svg)
+    assert t < 5, f"proclamation entrance runs {t:.1f}s"
+    title = "Proclamation — " + " ".join(" ".join(par) for par in content.PROCLAMATION)
+    return document(w, h, title, "\n".join(body), HALO_FILTER, motion_css(theme))
+
+
+def deed(repo: str, index: int, theme: str) -> str:
+    spec, p = content.PROJECTS[repo], palette(theme)
+    w, h = 1200, 160
+    d0 = index * 0.2  # cards cascade down the page
+    gold, rubric, cyan, muted = p["gold"], p["rubric"], p["cyan"], p["muted"]
+    body = [_animated_panel(p, w, h, d0)]
+    # Heraldic shield with the deed's Roman numeral.
+    body.append(f'<path class="draw" pathLength="1" style="animation-delay:{d0 + 0.2:g}s" d="{_shield(68, 26, 30, 78, 118)}" '
+                f'fill="{rubric}" fill-opacity="{0.12 if theme == "dark" else 0.07}" stroke="{gold}" stroke-width="1.5" stroke-linejoin="round"/>')
+    numeral = ("I", "II", "III", "IV", "V", "VI")[index]
+    body.append(f'<path class="rise" style="animation-delay:{d0 + 0.5:g}s" fill="{gold}" d="{MONO.path(numeral, 68, 72, 20, "middle")}"/>')
+    # Name with a breathing halo, then the epithet.
+    name_path = BLACKLETTER.path(spec["name"], 128, 62, 44)
+    nl, nt, nr, nb = BLACKLETTER.bounds(spec["name"], 128, 62, 44)
+    body.append(f'<g class="rise" style="animation-delay:{d0 + 0.4:g}s"><path class="halo" filter="url(#halo)" fill="{gold}" d="{name_path}"/></g>')
+    body.append(f'<path class="rise" style="animation-delay:{d0 + 0.4:g}s" fill="{gold}" d="{name_path}"/>')
+    body.append(f'<path class="rise" style="animation-delay:{d0 + 0.6:g}s" fill="{muted}" '
+                f'd="{MONO.path("· " + spec["epithet"], nr + 14, 62, 16)}"/>')
+    # Description, typed.
+    assert 130 + MONO.width(spec["line"], 16) < w - 40, f"{repo}: description too wide"
+    typed, t = _typed(p, spec["line"], 130, 96, 16, d0 + 0.8, p["ink"])
+    body.append(typed)
+    # Stack chips, staggered; Hubahu's are labelled as planned.
+    x, cy, size, pad, gap, ch = 130.0, 126, 13, 12, 10, 26
+    if spec["status"]:
+        body.append(f'<path class="rise" style="animation-delay:{t:.2f}s" fill="{muted}" d="{MONO.path("planned:", x, cy + 4.5, size)}"/>')
+        x += MONO.width("planned: ", size) + 4
+    for k, chip in enumerate(spec["chips"]):
+        cw = MONO.width(chip, size) + 2 * pad
+        body.append(
+            f'<g class="rise" style="animation-delay:{t + 0.12 * k:.2f}s">'
+            f'<rect x="{num(x)}" y="{cy - ch / 2}" width="{num(cw)}" height="{ch}" rx="{ch / 2}" fill="{cyan}" fill-opacity="0.08" stroke="{cyan}" stroke-width="1.2"/>'
+            f'<path fill="{p["ink"]}" d="{MONO.path(chip, x + cw / 2, cy + 4.5, size, "middle")}"/></g>')
+        x += cw + gap
+    assert x < 860, f"{repo}: chips run into the trace end ({x:.0f})"
+    # Status pill and the link hint on the right.
+    if spec["status"]:
+        label = spec["status"].upper()
+        pw = MONO.width(label, 13) + 24
+        body.append(f'<g class="rise" style="animation-delay:{d0 + 1.0:g}s">'
+                    f'<rect x="{num(w - 36 - pw)}" y="22" width="{num(pw)}" height="26" rx="13" fill="{rubric}" fill-opacity="0.1" stroke="{rubric}" stroke-width="1.2"/>'
+                    f'<path fill="{rubric}" d="{MONO.path(label, w - 36 - pw / 2, 39.5, 13, "middle")}"/></g>')
+    body.append(f'<path class="rise" style="animation-delay:{t + 0.5:.2f}s" fill="{muted}" '
+                f'd="{MONO.path("open repository →", w - 36, 132, 13, "end")}"/>')
+    # Circuit trace from the shield along the bottom, with a looping pulse.
+    trace = "M68 118V148H880"
+    body.append(f'<path d="{trace}" fill="none" stroke="{cyan}" stroke-opacity="0.8" stroke-width="1.5" stroke-linejoin="round"/>'
+                f'<circle cx="884" cy="148" r="3.5" fill="{p["panel"]}" stroke="{cyan}" stroke-width="1.5"/>'
+                f'<path class="pulse" pathLength="1" style="animation-delay:{d0 + 3:g}s" d="{trace}" fill="none" stroke="{cyan}" '
+                'stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>')
+    assert t + 0.5 < 5, f"{repo}: entrance runs {t:.1f}s"
+    title = f"{spec['name']} — {spec['epithet']}: {spec['line']}. Stack: {', '.join(spec['chips'])}" + (
+        f" (planned; {spec['status']})" if spec["status"] else "")
+    return document(w, h, title, "\n".join(body), HALO_FILTER, motion_css(theme))
+
+
+def deed_filename(repo: str, theme: str) -> str:
+    return f"deed-{repo.lower()}-{theme}.svg"
+
+
 def build() -> list[Path]:
     ASSETS.mkdir(exist_ok=True)
     written = []
@@ -409,6 +572,8 @@ def build() -> list[Path]:
             f"frontispiece-{theme}.svg": frontispiece(theme),
             f"armory-{theme}.svg": armory(theme),
             **{f"seal-{kind}-{theme}.svg": seal(theme, kind) for kind in SEALS},
+            f"proclamation-{theme}.svg": proclamation(theme),
+            **{deed_filename(repo, theme): deed(repo, i, theme) for i, repo in enumerate(content.PROJECTS)},
         }
         for name, svg in outputs.items():
             path = ASSETS / name
