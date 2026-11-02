@@ -193,6 +193,13 @@ def leaf(x: float, y: float, angle: float, length: float = 12, width: float = 7)
     )
 
 
+def regular_polygon(cx: float, cy: float, r: float, sides: int, rotation_deg: float = -90) -> str:
+    """Closed path for a regular polygon (circumradius r); the default puts a vertex at the top."""
+    pts = [(cx + r * math.cos(math.radians(rotation_deg + 360 * k / sides)),
+            cy + r * math.sin(math.radians(rotation_deg + 360 * k / sides))) for k in range(sides)]
+    return "M" + "L".join(f"{num(x)} {num(y)}" for x, y in pts) + "Z"
+
+
 def lozenge(cx: float, cy: float, r: float) -> str:
     return f"M{num(cx)} {num(cy - r)}L{num(cx + r)} {num(cy)}L{num(cx)} {num(cy + r)}L{num(cx - r)} {num(cy)}Z"
 
@@ -335,11 +342,12 @@ def armory(theme: str) -> str:
             f'<path d="{_shield(cx, top + 6, half_w - 6, side_bottom, tip - 9)}" fill="none" '
             f'stroke="{p["gold"]}" stroke-opacity="0.35" stroke-width="0.75"/>'
         )
-        # Rivets as status LEDs that fade slowly in and out (text never blinks).
+        # Rivets as red (rubric) status LEDs that fade slowly in and out (text never blinks).
         for k, rx in enumerate((cx - half_w, cx + half_w)):
             parts.append(
-                f'<g class="led" style="animation-delay:{delay + k * ARMORY_STAGGER_S / 2:g}s" fill="{p["cyan"]}">'
-                f'<circle cx="{num(rx)}" cy="{top}" r="6" fill-opacity="0.25"/><circle cx="{num(rx)}" cy="{top}" r="2.6"/></g>'
+                f'<g class="led" style="animation-delay:{delay + k * ARMORY_STAGGER_S / 2:g}s" fill="{p["rubric"]}">'
+                f'<path d="{regular_polygon(rx, top, ARMORY_LED_HALO_R, ARMORY_LED_SIDES)}" fill-opacity="0.25"/>'
+                f'<path d="{regular_polygon(rx, top, ARMORY_LED_CORE_R, ARMORY_LED_SIDES)}"/></g>'
             )
         parts.append(f'<path fill="{p["rubric"]}" d="{MONO.path(title, cx, top + 34, title_size, "middle")}"/>')
         rule_y = top + 46
@@ -365,6 +373,9 @@ def armory(theme: str) -> str:
 # the outline glow breathes over 6 s; columns are staggered so the effect
 # ripples left to right. Resting states are fully visible; text is static.
 ARMORY_STAGGER_S = 0.6
+ARMORY_LED_CORE_R = 4
+ARMORY_LED_HALO_R = 10
+ARMORY_LED_SIDES = 10  # decagon LEDs
 ARMORY_LED_PERIOD_S = 4
 ARMORY_GLOW_PERIOD_S = 6
 
