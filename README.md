@@ -50,7 +50,7 @@ Python · TypeScript · C++ · SQL · FastAPI · Pydantic · Uvicorn · PyJWT ·
 <!-- quests:start -->
 ### ✠ Quests Abroad · Open Source Contributions
 
-<a href="https://github.com/search?q=type%3Apr+author%3AKush-Core+is%3Apublic+is%3Amerged+-user%3AKush-Core&amp;type=pullrequests"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Kush-Core/Kush-Core/main/dist/quests-dark.svg"><img width="100%" alt="Merged pull requests to other open-source projects: memgraph/ai-toolkit #576: lightrag-memgraph: get_docs_paginated breaks ties by id so pages neve…" src="https://raw.githubusercontent.com/Kush-Core/Kush-Core/main/dist/quests-light.svg"></picture></a>
+<a href="https://github.com/search?q=type%3Apr+author%3AKush-Core+is%3Apublic+is%3Amerged+-user%3AKush-Core&amp;type=pullrequests"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Kush-Core/Kush-Core/main/dist/quests-dark.svg"><img width="100%" alt="Merged pull requests to other open-source projects: memgraph/ai-toolkit #576: lightrag-memgraph: get_docs_paginated breaks ties by id" src="https://raw.githubusercontent.com/Kush-Core/Kush-Core/main/dist/quests-light.svg"></picture></a>
 <!-- quests:end -->
 
 ### ✠ The Chronicle · Recent Activity

@@ -14,7 +14,7 @@ text { font-family: "JBM Chronicle", ui-monospace, monospace; font-size: 15px; }
 <circle cx="24" cy="18" r="6" fill="#FF4D8D"/><circle cx="44" cy="18" r="6" fill="#FFC94A"/><circle cx="64" cy="18" r="6" fill="#22D3EE"/>
 <text x="600.0" y="23" text-anchor="middle" fill="#8B949E">quests.log</text>
 <text y="66"><tspan x="32" fill="#22D3EE">$</tspan><tspan x="50" fill="#E6EDF3">grep sealed quests.log</tspan></text>
-<text y="91"><tspan x="32" fill="#22D3EE">▸</tspan><tspan x="56" fill="#8B949E">XXX·X·MMXXVI</tspan><tspan x="236" fill="#FFC94A">memgraph/ai-toolkit</tspan><tspan x="470" fill="#FF4D8D">sealed #576</tspan><tspan x="606" fill="#E6EDF3">lightrag-memgraph: get_docs_paginated breaks ties by id s...</tspan></text>
+<text y="91"><tspan x="32" fill="#22D3EE">▸</tspan><tspan x="56" fill="#8B949E">XXX·X·MMXXVI</tspan><tspan x="236" fill="#FFC94A">memgraph/ai-toolkit</tspan><tspan x="470" fill="#FF4D8D">sealed #576</tspan><tspan x="606" fill="#E6EDF3">lightrag-memgraph: get_docs_paginated breaks ties by id</tspan></text>
 <text y="124"><tspan x="56" fill="#8B949E">1 merged pull request across 1 repository</tspan></text>
 <text y="149"><tspan x="32" fill="#22D3EE">$</tspan></text>
 <rect class="cursor" x="50" y="136" width="9" height="17" fill="#22D3EE"/>
