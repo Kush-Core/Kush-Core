@@ -368,6 +368,39 @@ def seal(theme: str, kind: str) -> str:
     return document(w, h, label, body, defs)
 
 
+def tapestry_placeholder(theme: str) -> str:
+    """Stand-in for the contribution snake until the first workflow run replaces it."""
+    p = palette(theme)
+    w, h = 1200, 240
+    cell, gap, weeks, days = 12, 3, 53, 7
+    x0 = (w - (weeks * (cell + gap) - gap)) / 2
+    y0 = 36
+    cells = "".join(
+        f'<rect x="{num(x0 + wk * (cell + gap))}" y="{y0 + d * (cell + gap)}" width="{cell}" height="{cell}" rx="2"/>'
+        for wk in range(weeks) for d in range(days))
+    body = "\n".join([
+        panel(p, w, h),
+        f'<g fill="{TOKENS["tapestry"][theme]["dots"][0]}">{cells}</g>',
+        f'<path fill="{p["gold"]}" d="{MONO.path("The loom is warming up", w / 2, 180, 20, "middle")}"/>',
+        f'<path fill="{p["muted"]}" d="{MONO.path("Contribution graph appears after the first daily run", w / 2, 210, 14, "middle")}"/>',
+    ])
+    return document(w, h, "Contribution graph placeholder: the loom is warming up", body)
+
+
+def write_placeholders() -> list[Path]:
+    """Write dist/tapestry-{dark,light}.svg only where no file exists yet (never
+    overwrite the workflow's real output)."""
+    dist = ROOT / "dist"
+    dist.mkdir(exist_ok=True)
+    written = []
+    for theme in THEMES:
+        path = dist / f"tapestry-{theme}.svg"
+        if not path.exists():
+            path.write_text(tapestry_placeholder(theme), encoding="utf-8")
+            written.append(path)
+    return written
+
+
 def build() -> list[Path]:
     ASSETS.mkdir(exist_ok=True)
     written = []
@@ -508,9 +541,15 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", action="store_true", help="validate every SVG after building")
     ap.add_argument("--preview", action="store_true", help="write preview/index.html")
+    ap.add_argument("--placeholders", action="store_true",
+                    help="write dist/tapestry-{dark,light}.svg placeholders if they do not exist")
     args = ap.parse_args()
     written = build()
     print(f"wrote {len(written)} SVGs to {ASSETS.relative_to(ROOT)}/")
+    if args.placeholders:
+        placeholders = write_placeholders()
+        print(f"wrote {len(placeholders)} placeholder(s) to dist/")
+        written += placeholders
     ok = validate(written) if args.check else True
     if args.preview:
         print(f"wrote {write_preview().relative_to(ROOT)}")
