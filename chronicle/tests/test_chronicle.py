@@ -121,7 +121,7 @@ def svgs(tmp_path):
     rendered = render.write(fetch.select(EVENTS, get=no_network), "Kush-Core", tmp_path / "events")
     empty = render.write([], "Kush-Core", tmp_path / "empty")
     statics = sorted((ROOT / "assets").glob("*.svg"))
-    assert len(statics) == 8, "expected the 8 static assets in assets/"
+    assert len(statics) == 18, "expected the 18 static assets in assets/"
     return rendered + empty + statics
 
 

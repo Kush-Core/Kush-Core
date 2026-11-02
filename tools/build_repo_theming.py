@@ -16,33 +16,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_assets as ba  # noqa: E402
+import content  # noqa: E402
 
-PROJECTS = {
-    "Narrative_mind": {
-        "name": "Narrative Mind",
-        "line": "Fictional worlds as a Neo4j graph, with LLM extraction and Graph RAG",
-        "chips": ["FastAPI", "Neo4j", "Ollama / Groq", "React + TypeScript"],
-        "chip_label": None,
-    },
-    "hubahu": {
-        "name": "Hubahu",
-        "line": "Checks Hindi audio episodes against their scripts and flags mismatches",
-        "chips": ["FastAPI", "Postgres", "ONNX Runtime"],
-        "chip_label": "In progress · planned stack",
-    },
-    "Renewal-risk": {
-        "name": "Renewal Risk",
-        "line": "Churn risk per renewal decision from a 23M-row subscription payment log",
-        "chips": ["Python", "DuckDB", "scikit-learn", "lifelines"],
-        "chip_label": None,
-    },
-    "Throttling1": {
-        "name": "Throttling1",
-        "line": "How compiler flags, scheduler contention and threads change a 100M-float sum",
-        "chips": ["C++", "clang", "Apple M1"],
-        "chip_label": None,
-    },
-}
+PROJECTS = content.PROJECTS
 num = ba.num
 
 
