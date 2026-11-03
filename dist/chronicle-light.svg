@@ -18,7 +18,7 @@ text { font-family: "JBM Chronicle", ui-monospace, monospace; font-size: 15px; }
 <text y="116"><tspan x="32" fill="#0B6E8A">▸</tspan><tspan x="56" fill="#59636E">III·XI·MMXXVI</tspan><tspan x="236" fill="#8A5A00">Kush-Core</tspan><tspan x="452" fill="#B4124A">petitioned</tspan><tspan x="632" fill="#1F2328">feat: slow blinking red decagon LEDs on the Armory shields</tspan></text>
 <text y="141"><tspan x="32" fill="#0B6E8A">▸</tspan><tspan x="56" fill="#59636E">III·XI·MMXXVI</tspan><tspan x="236" fill="#8A5A00">Kush-Core</tspan><tspan x="452" fill="#B4124A">sealed</tspan><tspan x="632" fill="#1F2328">feat: animated Proclamation and Deeds of Note cards</tspan></text>
 <text y="166"><tspan x="32" fill="#0B6E8A">▸</tspan><tspan x="56" fill="#59636E">III·XI·MMXXVI</tspan><tspan x="236" fill="#8A5A00">Kush-Core</tspan><tspan x="452" fill="#B4124A">petitioned</tspan><tspan x="632" fill="#1F2328">feat: animated Proclamation and Deeds of Note cards</tspan></text>
-<text y="191"><tspan x="32" fill="#0B6E8A">▸</tspan><tspan x="56" fill="#59636E">III·XI·MMXXVI</tspan><tspan x="236" fill="#8A5A00">Kush-Core</tspan><tspan x="452" fill="#B4124A">sealed</tspan><tspan x="632" fill="#1F2328">feat: Quests Abroad section for merged open-source pull r...</tspan></text>
+<text y="191"><tspan x="32" fill="#0B6E8A">▸</tspan><tspan x="56" fill="#59636E">III·XI·MMXXVI</tspan><tspan x="236" fill="#8A5A00">Kush-Core</tspan><tspan x="452" fill="#B4124A">forged 1 commit</tspan><tspan x="632" fill="#1F2328">feat: Quests Abroad section for merged open-source pull r...</tspan></text>
 <text y="216"><tspan x="32" fill="#0B6E8A">$</tspan></text>
 <rect class="cursor" x="50" y="203" width="9" height="17" fill="#0B6E8A"/>
 </svg>
