@@ -32,6 +32,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
@@ -100,23 +101,47 @@ def palette(theme: str) -> dict[str, str | float]:
 
 
 class Outliner:
-    """Lays out a string glyph by glyph (advance widths only) and emits outlines."""
+    """Lays out a string glyph by glyph (advance widths only) and emits outlines.
 
-    def __init__(self, path: Path):
+    ``borrow`` maps a character to another font whose glyph is drawn instead,
+    scaled so that font's "l" stands as tall as this font's "l".
+    """
+
+    def __init__(self, path: Path, borrow: dict[str, Path] | None = None):
         self.file = path
         self.font = TTFont(path)
         self.glyphs = self.font.getGlyphSet()
         self.cmap = self.font.getBestCmap()
         self.upm = self.font["head"].unitsPerEm
         self.hmtx = self.font["hmtx"]
+        self.borrowed = {}
+        for ch, donor_path in (borrow or {}).items():
+            donor = Outliner(donor_path)
+            scale = self._ascender_ink() / donor._ascender_ink()
+            g = donor._glyph(ch)
+            outline = DecomposingRecordingPen(donor.glyphs)  # resolve components in the donor font
+            donor.glyphs[g].draw(outline)
+            self.borrowed[ch] = (outline.replay, scale, donor.hmtx[g][0] * scale)
+
+    def _ascender_ink(self) -> float:
+        pen = BoundsPen(self.glyphs)
+        self.glyphs[self._glyph("l")].draw(pen)
+        return pen.bounds[3]
 
     def _glyph(self, ch: str) -> str:
         if ord(ch) not in self.cmap:
             raise SystemExit(f"{self.file.name}: no glyph for {ch!r}")
         return self.cmap[ord(ch)]
 
+    def _layout(self, ch: str):
+        """(draw(pen), scale into this font's units, advance in this font's units)."""
+        if ch in self.borrowed:
+            return self.borrowed[ch]
+        g = self._glyph(ch)
+        return self.glyphs[g].draw, 1, self.hmtx[g][0]
+
     def width(self, text: str, size: float) -> float:
-        return sum(self.hmtx[self._glyph(c)][0] for c in text) * size / self.upm
+        return sum(self._layout(c)[2] for c in text) * size / self.upm
 
     def _origin(self, text: str, x: float, size: float, anchor: str) -> float:
         return x - {"start": 0.0, "middle": self.width(text, size) / 2, "end": self.width(text, size)}[anchor]
@@ -126,10 +151,10 @@ class Outliner:
         x0 = self._origin(text, x, size, anchor)
         cursor = 0
         for i, ch in enumerate(text):
-            g = self._glyph(ch)
+            draw, scale, advance = self._layout(ch)
             if select is None or select(i, ch):
-                self.glyphs[g].draw(TransformPen(pen, (s, 0, 0, -s, x0 + cursor * s, y)))
-            cursor += self.hmtx[g][0]
+                draw(TransformPen(pen, (s * scale, 0, 0, -s * scale, x0 + cursor * s, y)))
+            cursor += advance
 
     def path(self, text, x, y, size, anchor="start", select=None) -> str:
         pen = SVGPathPen(self.glyphs, ntos=num)
@@ -143,7 +168,10 @@ class Outliner:
         return pen.bounds
 
 
-BLACKLETTER = Outliner(ROOT / "fonts/UnifrakturMaguntia/UnifrakturMaguntia-Book.ttf")
+# UnifrakturMaguntia's Fraktur "k" reads as a "t" ("Renewal Risk" looked like
+# "Rist"), so lowercase k comes from Pirata One, a blackletter with a modern k.
+BLACKLETTER = Outliner(ROOT / "fonts/UnifrakturMaguntia/UnifrakturMaguntia-Book.ttf",
+                       borrow={"k": ROOT / "fonts/PirataOne/PirataOne-Regular.ttf"})
 MONO = Outliner(ROOT / "fonts/JetBrainsMono/JetBrainsMono-Regular.ttf")
 
 
